@@ -1,0 +1,10 @@
+id: universal.docs.claude-md-present
+version: 1
+what: |
+  Project has a CLAUDE.md file at the repository root.
+why: |
+  CLAUDE.md is Claude Code's standard for instructing the agent on project
+  conventions, commands, and gotchas. Without it, Claude operates with no
+  project-specific context and rediscovers everything every session.
+applies_to:
+  - any
