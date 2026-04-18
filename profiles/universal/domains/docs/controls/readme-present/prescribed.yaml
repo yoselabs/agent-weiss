@@ -1,0 +1,10 @@
+id: universal.docs.readme-present
+version: 1
+what: |
+  Project has a README at the repository root (README.md, README.rst, or README).
+why: |
+  Without a README, both humans and agents lack the entry point that explains
+  what the project is, how to run it, and how to contribute. Agents heuristically
+  read README first when scanning a new repo.
+applies_to:
+  - any
