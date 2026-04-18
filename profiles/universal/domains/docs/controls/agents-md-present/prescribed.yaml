@@ -1,0 +1,10 @@
+id: universal.docs.agents-md-present
+version: 1
+what: |
+  Project has an AGENTS.md file at the repository root.
+why: |
+  AGENTS.md is the cross-tool standard for instructing AI coding agents
+  (Codex, OpenCode, and others). Present alongside CLAUDE.md, it makes the
+  project legible to non-Claude agents.
+applies_to:
+  - any

@@ -1,0 +1,7 @@
+profile: universal
+description: Standards that apply to any project, regardless of language or framework.
+domains:
+  - docs
+  - security
+  - vcs
+  - project-structure
