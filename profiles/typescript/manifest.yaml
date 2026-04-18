@@ -1,0 +1,6 @@
+profile: typescript
+description: Standards for TypeScript / JavaScript projects (detected via package.json at the repo root).
+domains:
+  - project-structure
+  - quality
+  - testing
