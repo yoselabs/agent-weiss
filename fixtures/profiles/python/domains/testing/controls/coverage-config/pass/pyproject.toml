@@ -1,0 +1,10 @@
+[project]
+name = "fixture"
+version = "0.1.0"
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+skip_covered = true

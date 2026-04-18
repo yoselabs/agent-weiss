@@ -1,0 +1,13 @@
+id: python.testing.coverage-config
+version: 1
+what: |
+  pyproject.toml's [tool.coverage] section sets report.skip_covered=true and
+  run.branch=true.
+why: |
+  Without skip_covered=true, agents see 50+ fully-covered files drowning the
+  2 that need work. Branch coverage catches untested if/else branches that
+  line-only coverage misses.
+applies_to:
+  - python
+install:
+  macos: brew install conftest

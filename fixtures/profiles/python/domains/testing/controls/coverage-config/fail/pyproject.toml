@@ -1,0 +1,8 @@
+[project]
+name = "fixture"
+version = "0.1.0"
+
+[tool.coverage.run]
+source = ["src"]
+
+[tool.coverage.report]
