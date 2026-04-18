@@ -1,0 +1,14 @@
+id: typescript.project-structure.package-json
+version: 1
+what: |
+  package.json declares "type": "module", an engines field (engines.node), and
+  no wildcard ("*") version ranges in dependencies or devDependencies.
+why: |
+  ESM ("type": "module") is the modern default — without it Node treats .js as
+  CJS and modern import syntax breaks. engines.node prevents silent breakage
+  on developer machines with too-old Node. Wildcard versions accept any
+  release including breaking majors, making npm install non-deterministic.
+applies_to:
+  - typescript
+install:
+  macos: brew install conftest

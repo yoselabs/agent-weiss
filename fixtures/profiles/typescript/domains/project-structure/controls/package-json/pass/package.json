@@ -1,0 +1,9 @@
+{
+  "name": "fixture",
+  "version": "0.1.0",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "some-lib": "^1.2.3"
+  }
+}
