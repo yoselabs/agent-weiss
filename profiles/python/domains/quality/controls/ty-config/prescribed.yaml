@@ -1,0 +1,11 @@
+id: python.quality.ty-config
+version: 1
+what: |
+  pyproject.toml has a [tool.ty] section with at least one configured key.
+why: |
+  Type checking gives agents structural feedback they can't get from runtime
+  errors. ty (Astral) is fast enough to run on every save and surfaces
+  type misuse before tests do. A bare [tool.ty] section is the minimum signal
+  that the project takes type-checking seriously.
+applies_to:
+  - python
