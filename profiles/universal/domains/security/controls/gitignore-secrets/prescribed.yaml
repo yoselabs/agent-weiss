@@ -1,0 +1,14 @@
+id: universal.security.gitignore-secrets
+version: 1
+what: |
+  Project's .gitignore excludes .env and .env.* files at the repo root.
+why: |
+  Agents (and humans) frequently create .env files containing real API keys,
+  database URLs, and tokens. If .env is not gitignored, secrets leak into
+  history on the next `git add .` or `git commit -a`. .gitignore is the
+  cheapest, last-line-of-defense control against this entire class of leak.
+applies_to:
+  - any
+install:
+  macos: brew install conftest
+  linux: see https://www.conftest.dev/install/
