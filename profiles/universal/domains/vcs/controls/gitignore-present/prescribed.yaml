@@ -1,0 +1,10 @@
+id: universal.vcs.gitignore-present
+version: 1
+what: |
+  Project has a .gitignore at the repository root.
+why: |
+  Without .gitignore, developers and agents track build artifacts, IDE state,
+  virtual environments, and (worst) secrets. .gitignore is the foundation
+  every other VCS-hygiene control assumes.
+applies_to:
+  - any
