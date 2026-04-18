@@ -1,0 +1,9 @@
+[project]
+name = "fixture"
+version = "0.1.0"
+
+[tool.pytest.ini_options]
+addopts = "-v --strict-markers"
+env = [
+  "DATABASE_URL=postgresql://localhost:5433/test_db",
+]

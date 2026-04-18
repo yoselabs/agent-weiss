@@ -1,0 +1,16 @@
+id: python.testing.test-isolation
+version: 1
+what: |
+  pyproject.toml's [tool.pytest.ini_options] declares an `env` key with
+  test-isolated environment values (DATABASE_URL pointing to a test DB,
+  REDIS_URL on a test port, etc.).
+why: |
+  Without pytest-env injecting test environment values, tests inherit
+  whatever DATABASE_URL is in the developer's shell. On a dev machine
+  pointed at production, `make test` corrupts production data with no
+  warning. The `env` key in pytest config (read by pytest-env) injects
+  test-specific values BEFORE pydantic-settings or similar code reads them.
+applies_to:
+  - python
+install:
+  macos: brew install conftest
