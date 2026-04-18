@@ -1,0 +1,14 @@
+id: universal.security.gitleaks-precommit
+version: 1
+what: |
+  Project's .pre-commit-config.yaml includes a gitleaks hook entry.
+why: |
+  pre-commit + gitleaks blocks commits containing detected secrets before
+  they leave the developer machine. This is a defense-in-depth layer below
+  .gitignore — even if a secret slips past gitignore, gitleaks catches it
+  on the commit hook.
+applies_to:
+  - any
+install:
+  macos: brew install pre-commit gitleaks
+  linux: pip install pre-commit && (apt install gitleaks || nix-shell -p gitleaks)
