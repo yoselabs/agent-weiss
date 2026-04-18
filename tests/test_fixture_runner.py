@@ -7,6 +7,7 @@ exit code are validated through parse_check_output, which enforces the
 contract (status field present, status matches exit code, valid JSON).
 """
 from __future__ import annotations
+import os
 import subprocess
 from pathlib import Path
 
@@ -51,11 +52,13 @@ def test_control_passes_on_pass_fixture(fixture_control_dir: Path):
     assert check_sh.exists(), f"missing check.sh at {check_sh}"
 
     pass_dir = fixture_control_dir / "pass"
+    env = {**os.environ, "AGENT_WEISS_BUNDLE": str(REPO_ROOT)}
     result = subprocess.run(
         ["sh", str(check_sh)],
         cwd=pass_dir,
         capture_output=True,
         text=True,
+        env=env,
     )
     parsed = parse_check_output(stdout=result.stdout, exit_code=result.returncode)
     assert parsed.status is Status.PASS, (
@@ -71,11 +74,13 @@ def test_control_fails_on_fail_fixture(fixture_control_dir: Path):
     assert check_sh.exists(), f"missing check.sh at {check_sh}"
 
     fail_dir = fixture_control_dir / "fail"
+    env = {**os.environ, "AGENT_WEISS_BUNDLE": str(REPO_ROOT)}
     result = subprocess.run(
         ["sh", str(check_sh)],
         cwd=fail_dir,
         capture_output=True,
         text=True,
+        env=env,
     )
     parsed = parse_check_output(stdout=result.stdout, exit_code=result.returncode)
     assert parsed.status in (Status.FAIL, Status.SETUP_UNMET), (
