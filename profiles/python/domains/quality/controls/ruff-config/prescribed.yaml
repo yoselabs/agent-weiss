@@ -1,0 +1,14 @@
+id: python.quality.ruff-config
+version: 1
+what: |
+  pyproject.toml's [tool.ruff] block sets output-format=concise, line-length>=120,
+  and an mccabe max-complexity bound.
+why: |
+  Concise output keeps agent context windows clean. Adequate line length
+  prevents constant cosmetic re-wrapping. Complexity limits force
+  decomposition into testable units instead of sprawling functions.
+applies_to:
+  - python
+install:
+  macos: brew install conftest
+  linux: see https://www.conftest.dev/install/

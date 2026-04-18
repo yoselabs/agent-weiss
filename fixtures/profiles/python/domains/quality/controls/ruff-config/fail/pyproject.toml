@@ -1,0 +1,7 @@
+[project]
+name = "fixture"
+version = "0.1.0"
+
+[tool.ruff]
+output-format = "full"
+line-length = 80
