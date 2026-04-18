@@ -1,0 +1,12 @@
+id: typescript.testing.vitest-config
+version: 1
+what: |
+  Project has vitest.config.ts (or .js/.mjs) at the repo root, OR package.json
+  declares a vitest config block.
+why: |
+  Vitest is the de facto modern TS test runner — Vite-native, fast HMR-style
+  test reruns, ESM-first. Without config, it runs with defaults that may not
+  match the project's source/test layout. Explicit config makes test discovery
+  predictable for both agents and humans.
+applies_to:
+  - typescript
