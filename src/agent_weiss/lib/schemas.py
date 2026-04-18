@@ -63,3 +63,36 @@ def validate_prescribed(data: dict[str, Any]) -> PrescribedSchema:
         config_fragment=dict(data.get("config_fragment", {})),
         depends_on=list(data.get("depends_on", [])),
     )
+
+
+@dataclass(frozen=True)
+class BundleSchema:
+    """The bundle's manifest, located at <bundle_root>/bundle.yaml.
+
+    files: mapping of bundle-relative path → sha256 hex digest.
+    Used for drift detection (compare project's recorded hash against current bundle's).
+    """
+    version: str
+    files: dict[str, str]
+
+    def hash_for(self, path: str) -> str | None:
+        """Return the recorded sha256 for a bundle-relative path, or None if missing."""
+        return self.files.get(path)
+
+
+def validate_bundle(data: dict[str, Any]) -> BundleSchema:
+    """Validate a bundle.yaml dict and return a BundleSchema.
+
+    Raises ValueError on missing/malformed fields.
+    """
+    if "version" not in data:
+        raise ValueError("bundle.yaml missing required field: version")
+    if "files" not in data:
+        raise ValueError("bundle.yaml missing required field: files")
+    if not isinstance(data["files"], dict):
+        raise ValueError("bundle.yaml files must be a mapping (path → sha256)")
+
+    return BundleSchema(
+        version=str(data["version"]),
+        files={str(k): str(v) for k, v in data["files"].items()},
+    )
