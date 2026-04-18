@@ -1,0 +1,10 @@
+id: universal.security.env-files-not-tracked
+version: 1
+what: |
+  No .env or .env.* files are present in the project working tree at any depth.
+why: |
+  Even with .gitignore, a developer or agent can `git add -f .env` and bypass
+  the ignore rule. This control catches the artifact directly: if .env exists
+  in-tree, the user must confirm it's not tracked, or rename it (.env.example).
+applies_to:
+  - any
