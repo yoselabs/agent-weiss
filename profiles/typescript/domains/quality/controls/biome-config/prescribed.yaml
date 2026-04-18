@@ -1,0 +1,12 @@
+id: typescript.quality.biome-config
+version: 1
+what: |
+  Project has biome.json (or biome.jsonc) at the repo root with a configured
+  formatter or linter rules.
+why: |
+  Biome replaces ESLint + Prettier with a single fast Rust-based tool.
+  Without configuration, it runs with defaults that aren't tuned for the
+  project. Even a near-empty config is the signal that the project takes
+  formatting/linting seriously.
+applies_to:
+  - typescript
