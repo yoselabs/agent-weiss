@@ -1,0 +1,5 @@
+profile: python
+description: Standards for Python projects (detected via pyproject.toml at the repo root).
+domains:
+  - quality
+  - testing
