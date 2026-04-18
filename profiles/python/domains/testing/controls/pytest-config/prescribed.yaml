@@ -1,0 +1,13 @@
+id: python.testing.pytest-config
+version: 1
+what: |
+  pyproject.toml's [tool.pytest.ini_options] addopts includes --strict-markers,
+  --cov, and --cov-fail-under with a threshold ≥ 30.
+why: |
+  --strict-markers prevents silent typos in marker names. --cov runs coverage
+  on every test invocation. --cov-fail-under gates merges on coverage
+  regression. Below 30%, the threshold catches nothing meaningful.
+applies_to:
+  - python
+install:
+  macos: brew install conftest
