@@ -1,0 +1,1 @@
+# Fail fixture — no LICENSE

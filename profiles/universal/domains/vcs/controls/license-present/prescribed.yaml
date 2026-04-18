@@ -1,0 +1,11 @@
+id: universal.vcs.license-present
+version: 1
+what: |
+  Project has a LICENSE (or LICENSE.md / LICENSE.txt) file at the repository root.
+why: |
+  Code without a license is "all rights reserved" by default — collaborators,
+  contributors, and downstream users cannot legally use it. For open source
+  projects, a missing LICENSE blocks adoption. For internal projects, an
+  explicit LICENSE (even "Proprietary") prevents legal ambiguity.
+applies_to:
+  - any
