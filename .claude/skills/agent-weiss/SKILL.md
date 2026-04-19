@@ -189,21 +189,61 @@ the override is recorded and counts as 'pass' in the Setup score (Plan 4).
 
 ### 5. Verify phase
 
-For each control, run its `check.sh`. Parse the JSON output line per the
-contract:
-- `status: pass` (exit 0) — control satisfied
-- `status: fail` (exit 1) — Quality issue, surface findings_count and summary
-- `status: setup-unmet` (exit 127) — control infrastructure missing, surface
-  the install command and treat as Setup-unmet
+Run every applicable control's `check.sh` against the project. Sequential
+execution; per-control timeout enforced by the shell, not by us.
+
+```python
+from pathlib import Path
+from agent_weiss.lib.state import read_state
+from agent_weiss.lib.bundle import resolve_bundle_root
+from agent_weiss.lib.verify.dispatch import run_all_checks
+
+project_root = Path("<project_root>")
+state = read_state(project_root)
+bundle = resolve_bundle_root()
+
+results = run_all_checks(
+    project_root=project_root,
+    bundle_root=bundle,
+    state=state,
+)
+```
+
+`results` is a list of `ControlResult`. Each carries `control_id`, `profile`,
+`domain`, `status` (`pass` / `fail` / `setup-unmet`), `summary`,
+`findings_count`, and (for setup-unmet) `install`.
+
+> Important: invoke this AFTER the Setup phase — per spec, the user has had
+> a chance to fix anything outstanding before scoring kicks in.
 
 ### 6. Score and report
 
-Compute per spec §7:
-- Setup score: per-control 100/0, per-domain average, total average of domains.
-  Override-with-reason counts as 100.
-- Quality score: per-control 100/0, exclude setup-unmet controls.
+Compute the two scores and print the report.
 
-Print the report in the format shown in spec §7.
+```python
+from agent_weiss.lib.verify.score import compute_setup_score, compute_quality_score
+from agent_weiss.lib.verify.report import format_report
+
+setup_score = compute_setup_score(results=results, overrides=state.overrides)
+quality_score = compute_quality_score(results=results, overrides=state.overrides)
+
+report_text = format_report(
+    results=results,
+    setup_score=setup_score,
+    quality_score=quality_score,
+    overrides=state.overrides,
+)
+print(report_text)
+```
+
+Per the roadmap: scores are re-evaluated each run, never cached. Don't write
+them into `.agent-weiss.yaml`.
+
+The report uses these glyphs:
+- `✓` — control passed
+- `✗` — control failed (followed by summary + findings_count)
+- `⚠` — setup-unmet (followed by install hint)
+- `⊘` — overridden (followed by user's reason)
 
 ### 7. Update state
 
