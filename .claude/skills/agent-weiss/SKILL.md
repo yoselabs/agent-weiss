@@ -48,22 +48,31 @@ Scan the project root for stack signals:
 
 ### 2. Reconcile
 
-Invoke the reconciliation detector:
+Detect drift between `.agent-weiss.yaml` state and the project's working tree.
+The reconciliation detector is non-destructive — it only reports anomalies.
 
 ```python
 from pathlib import Path
-from agent_weiss.lib.reconcile import reconcile
+from agent_weiss.lib.reconcile import reconcile, render_anomalies
+
 report = reconcile(Path("<project_root>"))
-for anomaly in report.anomalies:
-    # surface to user
-    ...
+print(render_anomalies(report))
 ```
 
-> Plan 1 limitation: orphan detection only scans `.agent-weiss/policies/`. Files prescribed at other paths (e.g., `.pre-commit-config.yaml`) get ghost detection but not orphan detection. Plan 3 will broaden this.
+If `report.anomalies` is non-empty, prompt the user with the rendered text
+followed by:
 
-For each anomaly returned (orphan / ghost / locally_modified), prompt the user
-with the appropriate choice set per spec §6 "Reconciliation." Do not silently
-delete or reclassify files.
+> "Resolve these anomalies — verbs: `<numbers>` to mark resolved, `skip <numbers>: <reason>` to override, `cancel`. Or describe a different action you'd like me to take."
+
+Parse user input with `agent_weiss.lib.setup.verbs.parse_verb` (same parser
+as the Setup phase). Apply per-anomaly resolutions to state — for orphans,
+either re-track them in `prescribed_files` or delete them; for ghosts, either
+restore from bundle or remove from `prescribed_files`; for locally_modified,
+either accept the local version (re-hash) or restore from bundle.
+
+> Plan 3 limitation: Reconciliation is detection + rendering. Per-anomaly
+> apply logic (re-track / restore / accept) is handled by you, the skill —
+> follow the user's choice and write the resulting state via `write_state`.
 
 ### 3. Confirm profiles
 
@@ -72,13 +81,111 @@ answer. Persist confirmed profiles in `.agent-weiss.yaml`.
 
 ### 4. Setup phase
 
-For each control in each confirmed profile, gap-analyze: is the prescribed
-state present? If not, propose the change.
+Compute proposals, batch by domain, render to the user, parse their verb,
+cascade dependencies, and apply.
 
-Show the user the full setup plan, batched by domain. Use the verbs:
-`approve all`, `approve <domain>`, `<numbers>`, `skip <numbers>`,
-`explain <N>`, `dry-run`, `cancel`. Apply approved changes, backing up any
-overwritten file to `.agent-weiss/backups/<timestamp>/`.
+```python
+from pathlib import Path
+from datetime import datetime
+from agent_weiss.lib.state import read_state, write_state
+from agent_weiss.lib.bundle import resolve_bundle_root
+from agent_weiss.lib.setup.gap import compute_proposals
+from agent_weiss.lib.setup.batch import render_proposals
+from agent_weiss.lib.setup.verbs import parse_verb, VerbParseError
+from agent_weiss.lib.setup.cascade import cascade_skips
+from agent_weiss.lib.setup.apply import apply_proposal, ApplyOutcome
+from agent_weiss.lib.setup.dry_run import write_dry_run_report
+
+project_root = Path("<project_root>")
+state = read_state(project_root)
+bundle = resolve_bundle_root()
+
+proposals = compute_proposals(
+    project_root=project_root,
+    bundle_root=bundle,
+    state=state,
+)
+prompt_text = render_proposals(proposals)
+domains = sorted({p.domain for p in proposals})
+```
+
+Show `prompt_text` to the user. Then prompt:
+
+> "Which to approve? Verbs: `approve all`, `approve <domain>`, `<numbers>`,
+> `skip <numbers>[: reason]`, `explain <N>`, `dry-run`, `cancel`."
+
+Loop:
+
+```python
+while True:
+    user_input = read_user_input()  # the skill — your job
+    try:
+        decision = parse_verb(
+            user_input,
+            num_proposals=len(proposals),
+            available_domains=domains,
+        )
+    except VerbParseError as e:
+        show_error_and_reprompt(e)
+        continue
+
+    if decision.cancel:
+        return  # abort the loop
+
+    if decision.dry_run:
+        ts = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
+        report_path = write_dry_run_report(
+            project_root=project_root,
+            proposals=proposals,
+            timestamp=ts,
+        )
+        print(f"Dry-run report written to {report_path}. Exiting.")
+        return
+
+    if decision.explain_index is not None:
+        show_instruct_md(proposals[decision.explain_index - 1])
+        continue  # re-prompt
+
+    break
+
+# Cascade skips for declined dependencies
+decision = cascade_skips(proposals=proposals, decision=decision)
+
+# Apply each proposal's outcome.
+decided_at = datetime.now().date().isoformat()
+for i, p in enumerate(proposals, start=1):
+    if decision.approve_all or i in decision.approve_indices or p.domain in decision.approve_domains:
+        outcome = ApplyOutcome.APPROVED
+        reason = None
+    elif i in decision.skip_indices:
+        outcome = ApplyOutcome.SKIPPED
+        reason = decision.skip_reasons.get(i)
+    else:
+        # Neither approved nor skipped — treat as deferred (no state change).
+        continue
+
+    state, _ = apply_proposal(
+        proposal=p,
+        state=state,
+        outcome=outcome,
+        decided_at=decided_at,
+        reason=reason,
+    )
+
+write_state(project_root, state)
+```
+
+For each MANUAL_ACTION proposal that was approved, you (the skill) must show
+the user the contents of `proposal.instruct_path` so they can carry out the
+action manually. Confirm with them ("done?") before recording approval.
+
+For approved proposals where the user confirmed handled, the next Verify run
+(step 5) checks that the action stuck. For declined proposals with a reason,
+the override is recorded and counts as 'pass' in the Setup score (Plan 4).
+
+> Plan 3 limitation: only MANUAL_ACTION proposals are supported. INSTALL_FILE
+> and MERGE_FRAGMENT raise NotImplementedError until later plans add file
+> install + config-merge logic.
 
 ### 5. Verify phase
 
