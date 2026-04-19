@@ -68,13 +68,13 @@ def test_report_groups_controls_by_domain():
     text = format_report(
         results=results, setup_score=setup, quality_score=quality, overrides={}
     )
-    docs_pos = text.lower().index("docs")
-    security_pos = text.lower().index("security")
+    docs_header = text.index("## docs")
+    security_header = text.index("## security")
     x_pos = text.index("u.docs.x")
     y_pos = text.index("u.security.y")
     z_pos = text.index("u.docs.z")
-    # Both docs items appear before the security header
-    assert docs_pos < x_pos < z_pos < security_pos < y_pos
+    # Both docs items appear before the security header; security item after.
+    assert docs_header < x_pos < z_pos < security_header < y_pos
 
 
 def test_report_marks_overridden_controls():

@@ -41,8 +41,8 @@ def format_report(
         return "\n".join(lines) + "\n"
 
     # Overall scores
-    lines.append(f"**Setup:** {round(setup_score.total)}%")
-    lines.append(f"**Quality:** {round(quality_score.total)}%")
+    lines.append(f"**Setup:** {round(setup_score.total)}% — per-domain: {_format_per_domain(setup_score)}")
+    lines.append(f"**Quality:** {round(quality_score.total)}% — per-domain: {_format_per_domain(quality_score)}")
     lines.append("")
 
     # Per-domain breakdown
