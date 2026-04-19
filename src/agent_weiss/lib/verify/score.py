@@ -70,3 +70,30 @@ def _aggregate(
     per_domain = {d: sum(s) / len(s) for d, s in by_domain.items()}
     total = sum(per_domain.values()) / len(per_domain)
     return ScoreReport(per_control=dict(per_control), per_domain=per_domain, total=total)
+
+
+def compute_quality_score(
+    *,
+    results: list[ControlResult],
+    overrides: dict[str, OverrideEntry],
+) -> ScoreReport:
+    """Compute the Quality score per spec §7.
+
+    Per control: 100 if pass; 0 if fail; EXCLUDED if setup-unmet (and not
+    overridden). Overrides count as 100.
+
+    Per domain: mean of measurable controls. Domains with no measurable
+    controls are excluded from the total.
+    """
+    per_control: OrderedDict[str, float] = OrderedDict()
+    for r in results:
+        if r.control_id in overrides:
+            per_control[r.control_id] = 100.0
+            continue
+        if r.status is Status.PASS:
+            per_control[r.control_id] = 100.0
+        elif r.status is Status.FAIL:
+            per_control[r.control_id] = 0.0
+        # SETUP_UNMET (without override) → excluded
+
+    return _aggregate(per_control, results)
