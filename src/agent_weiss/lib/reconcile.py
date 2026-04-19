@@ -68,3 +68,28 @@ def reconcile(project_root: Path) -> ReconcileReport:
                 ))
 
     return report
+
+
+def render_anomalies(report: ReconcileReport) -> str:
+    """Render anomalies as numbered text, grouped by anomaly kind.
+
+    Mirrors the setup render_proposals shape so the skill can reuse the same
+    user-prompt verbs (numbers / `skip` / `cancel` etc.).
+    """
+    if not report.anomalies:
+        return "No anomalies — state and disk agree.\n"
+
+    # Group by kind preserving first-seen order.
+    grouped: dict[str, list[Anomaly]] = {}
+    for a in report.anomalies:
+        grouped.setdefault(a.kind, []).append(a)
+
+    lines: list[str] = []
+    counter = 1
+    for kind, items in grouped.items():
+        lines.append(f"## {kind}")
+        for a in items:
+            lines.append(f"{counter}. {a.path} — {a.detail}")
+            counter += 1
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
