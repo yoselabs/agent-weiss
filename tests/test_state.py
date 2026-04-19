@@ -98,3 +98,32 @@ def test_write_state_does_not_mutate_raw(tmp_path):
     raw_before = copy.deepcopy(state._raw)
     write_state(tmp_path, state)
     assert state._raw == raw_before
+
+
+from agent_weiss.lib.setup.types import OverrideEntry
+
+
+def test_state_overrides_round_trip(tmp_path):
+    """Overrides written to state are re-read with same shape."""
+    from agent_weiss.lib.state import State, write_state, read_state
+    state = State(
+        bundle_version="0.0.1",
+        profiles=["python"],
+        overrides={
+            "python.quality.ty-config": OverrideEntry(
+                reason="we use mypy",
+                decided_at="2026-04-19",
+            ),
+        },
+    )
+    write_state(tmp_path, state)
+    loaded = read_state(tmp_path)
+    assert "python.quality.ty-config" in loaded.overrides
+    assert loaded.overrides["python.quality.ty-config"].reason == "we use mypy"
+    assert loaded.overrides["python.quality.ty-config"].decided_at == "2026-04-19"
+
+
+def test_state_overrides_default_empty(tmp_path):
+    """A fresh state has empty overrides."""
+    from agent_weiss.lib.state import read_state
+    assert read_state(tmp_path).overrides == {}

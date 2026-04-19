@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from ruamel.yaml import YAML
 
+from agent_weiss.lib.setup.types import OverrideEntry
+
 STATE_FILENAME = ".agent-weiss.yaml"
 SCHEMA_VERSION = 1
 
@@ -32,6 +34,7 @@ class State:
     schema_version: int = SCHEMA_VERSION
     profiles: list[str] = field(default_factory=list)
     prescribed_files: dict[str, PrescribedFileEntry] = field(default_factory=dict)
+    overrides: dict[str, OverrideEntry] = field(default_factory=dict)
     _raw: dict = field(default_factory=dict, repr=False)
 
 
@@ -70,11 +73,19 @@ def read_state(project_root: Path) -> State:
             last_synced=str(entry["last_synced"]),
         )
 
+    overrides = {}
+    for control_id, entry in (raw.get("overrides") or {}).items():
+        overrides[str(control_id)] = OverrideEntry(
+            reason=str(entry["reason"]),
+            decided_at=str(entry["decided_at"]),
+        )
+
     return State(
         bundle_version=raw.get("bundle_version"),
         schema_version=int(raw_version),
         profiles=list(raw.get("profiles") or []),
         prescribed_files=pf,
+        overrides=overrides,
         _raw=dict(raw),
     )
 
@@ -101,6 +112,10 @@ def write_state(project_root: Path, state: State) -> None:
             "last_synced": entry.last_synced,
         }
         for path_key, entry in state.prescribed_files.items()
+    }
+    out["overrides"] = {
+        control_id: {"reason": entry.reason, "decided_at": entry.decided_at}
+        for control_id, entry in state.overrides.items()
     }
 
     with path.open("w") as f:
