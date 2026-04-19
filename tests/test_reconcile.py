@@ -84,3 +84,13 @@ def test_locally_modified_detected(tmp_path: Path):
     report = reconcile(tmp_path)
     assert len(report.anomalies) == 1
     assert report.anomalies[0].kind == "locally_modified"
+
+
+def test_orphan_scan_is_recursive(tmp_path):
+    """Files in nested subdirs of .agent-weiss/policies/ are detected as orphans."""
+    nested = tmp_path / ".agent-weiss" / "policies" / "subdir"
+    nested.mkdir(parents=True)
+    (nested / "nested.rego").write_bytes(b"package nested\n")
+    _setup_project_with_state(tmp_path, {})
+    report = reconcile(tmp_path)
+    assert any(a.kind == "orphan" and a.path.endswith("nested.rego") for a in report.anomalies)

@@ -53,10 +53,10 @@ def reconcile(project_root: Path) -> ReconcileReport:
                 detail=f"recorded {entry.sha256[:8]}, on disk {actual_hash[:8]}",
             ))
 
-    # 2. Detect orphans (in policies dir, not tracked).
+    # 2. Detect orphans (in policies dir or any subdir, not tracked).
     policies_dir = project_root / POLICIES_DIR
     if policies_dir.exists():
-        for entry_path in policies_dir.iterdir():
+        for entry_path in policies_dir.rglob("*"):
             if not entry_path.is_file():
                 continue
             relative_path = str(entry_path.relative_to(project_root))

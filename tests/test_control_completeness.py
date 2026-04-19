@@ -56,3 +56,17 @@ def test_control_has_fixtures(control_dir: Path):
     fixture_dir = FIXTURES / "profiles" / relative
     assert (fixture_dir / "pass").is_dir(), f"missing pass fixture at {fixture_dir / 'pass'}"
     assert (fixture_dir / "fail").is_dir(), f"missing fail fixture at {fixture_dir / 'fail'}"
+
+
+@pytest.mark.parametrize("control_dir", _all_control_dirs(), ids=lambda p: str(p.relative_to(PROFILES)))
+def test_control_id_matches_path(control_dir: Path):
+    """prescribed.yaml id must match the directory path: profile.domain.control."""
+    p = control_dir / "prescribed.yaml"
+    yaml = YAML(typ="safe")
+    data = yaml.load(p)
+    relative = control_dir.relative_to(PROFILES)
+    parts = relative.parts  # ('profile', 'domains', 'domain', 'controls', 'control')
+    expected_id = f"{parts[0]}.{parts[2]}.{parts[4]}"
+    assert data["id"] == expected_id, (
+        f"prescribed.yaml id={data['id']!r} doesn't match path-derived id={expected_id!r}"
+    )

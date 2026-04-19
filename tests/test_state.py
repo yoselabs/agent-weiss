@@ -58,3 +58,43 @@ def test_state_file_path_is_yaml_at_root(tmp_path: Path):
     state = State(profiles=["universal"])
     write_state(tmp_path, state)
     assert (tmp_path / ".agent-weiss.yaml").exists()
+
+
+import copy
+from agent_weiss.lib.state import SCHEMA_VERSION
+
+
+def test_state_schema_version_round_trips(tmp_path):
+    """State.schema_version is read from disk and re-written on round-trip."""
+    state_path = tmp_path / ".agent-weiss.yaml"
+    state_path.write_text("version: 1\nbundle_version: '0.0.1'\nprofiles: []\n")
+    state = read_state(tmp_path)
+    assert state.schema_version == 1
+    write_state(tmp_path, state)
+    re_read = read_state(tmp_path)
+    assert re_read.schema_version == 1
+
+
+def test_state_unknown_schema_version_raises(tmp_path):
+    """Reading a state file with a schema_version newer than supported raises."""
+    state_path = tmp_path / ".agent-weiss.yaml"
+    state_path.write_text(f"version: {SCHEMA_VERSION + 1}\nprofiles: []\n")
+    import pytest
+    with pytest.raises(ValueError, match="schema_version"):
+        read_state(tmp_path)
+
+
+def test_write_state_does_not_mutate_raw(tmp_path):
+    """Calling write_state should not mutate state._raw nested values (deepcopy guarantee)."""
+    state_path = tmp_path / ".agent-weiss.yaml"
+    state_path.write_text(
+        "version: 1\n"
+        "profiles: []\n"
+        "future_block:\n"
+        "  nested:\n"
+        "    key: original_value\n"
+    )
+    state = read_state(tmp_path)
+    raw_before = copy.deepcopy(state._raw)
+    write_state(tmp_path, state)
+    assert state._raw == raw_before

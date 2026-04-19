@@ -4,6 +4,7 @@ The state file is the source of truth for prescribed-vs-custom file classificati
 Round-trips with ruamel.yaml to preserve comments and unknown keys (forward-compat).
 """
 from __future__ import annotations
+import copy
 from dataclasses import dataclass, field
 from pathlib import Path
 from ruamel.yaml import YAML
@@ -28,6 +29,7 @@ class State:
     are preserved verbatim via the _raw shadow dict for forward compatibility.
     """
     bundle_version: str | None = None
+    schema_version: int = SCHEMA_VERSION
     profiles: list[str] = field(default_factory=list)
     prescribed_files: dict[str, PrescribedFileEntry] = field(default_factory=dict)
     _raw: dict = field(default_factory=dict, repr=False)
@@ -42,13 +44,23 @@ def _yaml() -> YAML:
 
 
 def read_state(project_root: Path) -> State:
-    """Read .agent-weiss.yaml from project root. Returns empty State if missing."""
+    """Read .agent-weiss.yaml from project root. Returns empty State if missing.
+
+    Raises ValueError if state file's schema_version is newer than this code supports.
+    """
     path = project_root / STATE_FILENAME
     if not path.exists():
         return State()
 
     yaml = _yaml()
     raw = yaml.load(path) or {}
+
+    raw_version = raw.get("version", SCHEMA_VERSION)
+    if raw_version > SCHEMA_VERSION:
+        raise ValueError(
+            f"schema_version {raw_version} is newer than supported "
+            f"({SCHEMA_VERSION}). Upgrade agent-weiss."
+        )
 
     pf = {}
     for key, entry in (raw.get("prescribed_files") or {}).items():
@@ -60,6 +72,7 @@ def read_state(project_root: Path) -> State:
 
     return State(
         bundle_version=raw.get("bundle_version"),
+        schema_version=int(raw_version),
         profiles=list(raw.get("profiles") or []),
         prescribed_files=pf,
         _raw=dict(raw),
@@ -69,13 +82,14 @@ def read_state(project_root: Path) -> State:
 def write_state(project_root: Path, state: State) -> None:
     """Write State back to .agent-weiss.yaml, preserving unknown keys.
 
-    Strategy: start from state._raw (preserves comments + unknown fields),
-    overlay typed fields. This is the source of forward compatibility.
+    Strategy: start from a deepcopy of state._raw (preserves comments + unknown
+    fields, but prevents write-time mutation of the in-memory shadow), overlay
+    typed fields. This is the source of forward compatibility.
     """
     path = project_root / STATE_FILENAME
     yaml = _yaml()
 
-    out = dict(state._raw)
+    out = copy.deepcopy(state._raw)
     out["version"] = SCHEMA_VERSION
     if state.bundle_version is not None:
         out["bundle_version"] = state.bundle_version
